@@ -46,6 +46,23 @@ class EmbeddingProviderSettings(BaseSettings):
         default="sentence-transformers/all-MiniLM-L6-v2",
         validation_alias="EMBEDDING_MODEL",
     )
+    
+    # OpenAI Compatible Settings
+    openai_api_key: str | None = Field(
+        default=None,
+        validation_alias="OPENAI_API_KEY",
+        description="API key for OpenAI or compatible services"
+    )
+    openai_base_url: str | None = Field(
+        default=None,
+        validation_alias="OPENAI_BASE_URL",
+        description="Base URL for OpenAI API or compatible services (e.g., http://localhost:11434/v1 for Ollama)"
+    )
+    openai_vector_size: int | None = Field(
+        default=None,
+        validation_alias="OPENAI_VECTOR_SIZE",
+        description="Vector size for the embedding model (e.g., 1536 for text-embedding-ada-002)"
+    )
 
 
 class FilterableField(BaseModel):
