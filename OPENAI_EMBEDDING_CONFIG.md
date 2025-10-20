@@ -151,7 +151,7 @@ OPENAI_VECTOR_SIZE=1536
     "args": ["mcp-server-qdrant"],
     "env": {
       "QDRANT_URL": "http://localhost:6333",
-      "COLLECTION_NAME": "my-memories",
+      "COLLECTION_NAME": "ws-77b2ac62ce00ae8e",
       "EMBEDDING_PROVIDER": "openai_compatible",
       "EMBEDDING_MODEL": "text-embedding-ada-002",
       "OPENAI_API_KEY": "your-api-key",

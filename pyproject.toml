@@ -17,8 +17,8 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "ipdb>=0.13.13",
     "isort>=6.0.1",
     "mypy>=1.9.0",

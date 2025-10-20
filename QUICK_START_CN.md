@@ -32,7 +32,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 # 设置环境变量并运行
 QDRANT_URL="http://localhost:6333" \
-COLLECTION_NAME="my-memories" \
+COLLECTION_NAME="ws-77b2ac62ce00ae8e" \
 uvx mcp-server-qdrant
 ```
 
@@ -50,7 +50,7 @@ uvx mcp-server-qdrant
       "args": ["mcp-server-qdrant"],
       "env": {
         "QDRANT_URL": "http://localhost:6333",
-        "COLLECTION_NAME": "my-memories",
+        "COLLECTION_NAME": "ws-77b2ac62ce00ae8e",
         "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
       }
     }
@@ -66,14 +66,14 @@ uvx mcp-server-qdrant
 | 环境变量 | 说明 | 示例 |
 |---------|------|------|
 | `QDRANT_URL` 或 `QDRANT_LOCAL_PATH` | Qdrant 服务地址或本地路径 | `http://localhost:6333` |
-| `COLLECTION_NAME` | 向量集合名称 | `my-memories` |
+| `COLLECTION_NAME` | 向量集合名称 | `ws-77b2ac62ce00ae8e` |
 
 ### 可选配置
 | 环境变量 | 说明 | 默认值 |
 |---------|------|--------|
 | `EMBEDDING_MODEL` | 嵌入模型名称 | `sentence-transformers/all-MiniLM-L6-v2` |
-| `EMBEDDING_DIM` | 向量维度 | `384` |
-| `SEARCH_LIMIT` | 搜索返回数量 | `10` |
+| `QDRANT_SEARCH_LIMIT` | 搜索返回数量 | `10` |
+| `OPENAI_VECTOR_SIZE` | OpenAI 兼容服务的向量维度（仅在使用 `openai-compatible` 提供者时需要） | 根据模型自动确定 |
 
 ## 💡 使用示例
 
@@ -125,9 +125,9 @@ metadata = {
   "env": {
     "EMBEDDING_PROVIDER": "openai-compatible",
     "OPENAI_API_KEY": "your-api-key",
-    "OPENAI_API_BASE": "https://api.openai.com/v1",
+    "OPENAI_BASE_URL": "https://api.openai.com/v1",
     "EMBEDDING_MODEL": "text-embedding-3-small",
-    "EMBEDDING_DIM": "1536"
+    "OPENAI_VECTOR_SIZE": "1536"
   }
 }
 ```

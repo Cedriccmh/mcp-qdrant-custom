@@ -14,7 +14,7 @@ EXPOSE 8000
 # Set environment variables with defaults that can be overridden at runtime
 ENV QDRANT_URL=""
 ENV QDRANT_API_KEY=""
-ENV COLLECTION_NAME="default-collection"
+ENV COLLECTION_NAME="ws-77b2ac62ce00ae8e"
 ENV EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
 
 # Run the server with SSE transport

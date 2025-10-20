@@ -21,6 +21,7 @@ class Entry(BaseModel):
 
     content: str
     metadata: Metadata | None = None
+    score: float | None = None
 
 
 class QdrantConnector:
@@ -51,6 +52,7 @@ class QdrantConnector:
             location=qdrant_url, api_key=qdrant_api_key, path=qdrant_local_path
         )
         self._field_indexes = field_indexes
+        self._collection_vector_config_cache: dict[str, Any] = {}
 
     async def get_collection_names(self) -> list[str]:
         """
@@ -59,6 +61,33 @@ class QdrantConnector:
         """
         response = await self._client.get_collections()
         return [collection.name for collection in response.collections]
+
+    async def _uses_unnamed_vectors(self, collection_name: str) -> bool:
+        """
+        Check if a collection uses unnamed vectors (simple list) or named vectors (dict).
+        :param collection_name: The name of the collection to check.
+        :return: True if collection uses unnamed vectors, False if it uses named vectors.
+        """
+        if collection_name in self._collection_vector_config_cache:
+            return self._collection_vector_config_cache[collection_name]
+        
+        collection_exists = await self._client.collection_exists(collection_name)
+        if not collection_exists:
+            # New collection will be created - use named vectors by default
+            self._collection_vector_config_cache[collection_name] = False
+            return False
+        
+        # Get collection info to check vector configuration
+        info = await self._client.get_collection(collection_name)
+        vectors_config = info.config.params.vectors
+        
+        # If vectors is a VectorParams object directly (not dict), it's unnamed
+        # If vectors is a dict, it has named vectors
+        is_unnamed = not isinstance(vectors_config, dict)
+        self._collection_vector_config_cache[collection_name] = is_unnamed
+        
+        logger.info(f"Collection '{collection_name}' uses {'unnamed' if is_unnamed else 'named'} vectors")
+        return is_unnamed
 
     async def store(self, entry: Entry, *, collection_name: str | None = None):
         """
@@ -76,15 +105,25 @@ class QdrantConnector:
         # it should unlock usage of server-side inference.
         embeddings = await self._embedding_provider.embed_documents([entry.content])
 
+        # Determine vector format based on collection configuration
+        uses_unnamed = await self._uses_unnamed_vectors(collection_name)
+        
+        if uses_unnamed:
+            # Use unnamed vector format (simple list)
+            vector = embeddings[0]
+        else:
+            # Use named vector format (dictionary)
+            vector_name = self._embedding_provider.get_vector_name()
+            vector = {vector_name: embeddings[0]}
+        
         # Add to Qdrant
-        vector_name = self._embedding_provider.get_vector_name()
         payload = {"document": entry.content, METADATA_PATH: entry.metadata}
         await self._client.upsert(
             collection_name=collection_name,
             points=[
                 models.PointStruct(
                     id=uuid.uuid4().hex,
-                    vector={vector_name: embeddings[0]},
+                    vector=vector,
                     payload=payload,
                 )
             ],
@@ -118,24 +157,72 @@ class QdrantConnector:
         # it should unlock usage of server-side inference.
 
         query_vector = await self._embedding_provider.embed_query(query)
-        vector_name = self._embedding_provider.get_vector_name()
-
+        
+        # Determine if we need to specify a vector name
+        uses_unnamed = await self._uses_unnamed_vectors(collection_name)
+        
         # Search in Qdrant
-        search_results = await self._client.query_points(
-            collection_name=collection_name,
-            query=query_vector,
-            using=vector_name,
-            limit=limit,
-            query_filter=query_filter,
-        )
-
-        return [
-            Entry(
-                content=result.payload["document"],
-                metadata=result.payload.get("metadata"),
+        if uses_unnamed:
+            # For unnamed vectors, don't specify 'using' parameter
+            search_results = await self._client.query_points(
+                collection_name=collection_name,
+                query=query_vector,
+                limit=limit,
+                query_filter=query_filter,
             )
-            for result in search_results.points
-        ]
+        else:
+            # For named vectors, specify which vector to use
+            vector_name = self._embedding_provider.get_vector_name()
+            search_results = await self._client.query_points(
+                collection_name=collection_name,
+                query=query_vector,
+                using=vector_name,
+                limit=limit,
+                query_filter=query_filter,
+            )
+
+        # Parse results - handle both MCP format and other formats
+        entries = []
+        for result in search_results.points:
+            # Extract score (available in query_points results)
+            score = getattr(result, 'score', None)
+            
+            # Try MCP format first (document + metadata)
+            if "document" in result.payload:
+                entries.append(
+                    Entry(
+                        content=result.payload["document"],
+                        metadata=result.payload.get(METADATA_PATH),
+                        score=score,
+                    )
+                )
+            # Handle code chunk format (codeChunk + other fields)
+            elif "codeChunk" in result.payload:
+                # Extract code chunk as content
+                content = result.payload["codeChunk"]
+                # Use other fields as metadata
+                metadata = {k: v for k, v in result.payload.items() if k != "codeChunk"}
+                entries.append(Entry(content=content, metadata=metadata, score=score))
+            # Generic fallback: try to find any text-like field
+            else:
+                # Look for common text fields
+                text_fields = ["text", "content", "body", "description"]
+                content = None
+                for field in text_fields:
+                    if field in result.payload:
+                        content = result.payload[field]
+                        break
+                
+                if content is None:
+                    # Use entire payload as string if no text field found
+                    content = str(result.payload)
+                    metadata = None
+                else:
+                    metadata = {k: v for k, v in result.payload.items() if k != field}
+                
+                entries.append(Entry(content=content, metadata=metadata, score=score))
+        
+        return entries
 
     async def _ensure_collection_exists(self, collection_name: str):
         """

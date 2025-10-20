@@ -3,6 +3,7 @@ import logging
 from typing import Annotated, Any, Optional
 
 from fastmcp import Context, FastMCP
+from mcp.types import TextContent
 from pydantic import Field
 from qdrant_client import models
 
@@ -38,6 +39,7 @@ class QdrantMCPServer(FastMCP):
         instructions: str | None = None,
         **settings: Any,
     ):
+        logger.info("Initializing QdrantMCPServer...")
         self.tool_settings = tool_settings
         self.qdrant_settings = qdrant_settings
 
@@ -55,16 +57,19 @@ class QdrantMCPServer(FastMCP):
         self.embedding_provider: Optional[EmbeddingProvider] = None
 
         if embedding_provider_settings:
+            logger.info(f"Creating embedding provider: {embedding_provider_settings.provider_type}")
             self.embedding_provider_settings = embedding_provider_settings
             self.embedding_provider = create_embedding_provider(
                 embedding_provider_settings
             )
         else:
+            logger.info("Using provided embedding provider")
             self.embedding_provider_settings = None
             self.embedding_provider = embedding_provider
 
         assert self.embedding_provider is not None, "Embedding provider is required"
 
+        logger.info(f"Initializing Qdrant connector - Location: {qdrant_settings.location}, Collection: {qdrant_settings.collection_name}")
         self.qdrant_connector = QdrantConnector(
             qdrant_settings.location,
             qdrant_settings.api_key,
@@ -74,16 +79,44 @@ class QdrantMCPServer(FastMCP):
             make_indexes(qdrant_settings.filterable_fields_dict()),
         )
 
+        logger.info("Initializing FastMCP parent class...")
         super().__init__(name=name, instructions=instructions, **settings)
 
+        logger.info("Setting up tools...")
         self.setup_tools()
+        logger.info("QdrantMCPServer initialization complete")
 
     def format_entry(self, entry: Entry) -> str:
         """
         Feel free to override this method in your subclass to customize the format of the entry.
         """
-        entry_metadata = json.dumps(entry.metadata) if entry.metadata else ""
-        return f"<entry><content>{entry.content}</content><metadata>{entry_metadata}</metadata></entry>"
+        lines = []
+        
+        # Extract file path and line numbers from metadata
+        if entry.metadata:
+            file_path = entry.metadata.get("filePath", "")
+            start_line = entry.metadata.get("startLine", "")
+            end_line = entry.metadata.get("endLine", "")
+            
+            if file_path:
+                lines.append(f"File path: {file_path}")
+            
+            # Add score if available
+            if entry.score is not None:
+                lines.append(f"Score: {entry.score}")
+            
+            # Add line numbers if available
+            if start_line and end_line:
+                lines.append(f"Lines: {start_line}-{end_line}")
+        else:
+            # No metadata, just show score if available
+            if entry.score is not None:
+                lines.append(f"Score: {entry.score}")
+        
+        # Add the content
+        lines.append(f"Code Chunk: {entry.content}")
+        
+        return "\n".join(lines)
 
     def setup_tools(self):
         """
@@ -131,7 +164,7 @@ class QdrantMCPServer(FastMCP):
                 str, Field(description="The collection to search in")
             ],
             query_filter: ArbitraryFilter | None = None,
-        ) -> list[str] | None:
+        ) -> list[TextContent]:
             """
             Find memories in Qdrant.
             :param ctx: The context for the request.
@@ -139,7 +172,7 @@ class QdrantMCPServer(FastMCP):
             :param collection_name: The name of the collection to search in, optional. If not provided,
                                     the default collection is used.
             :param query_filter: The filter to apply to the query.
-            :return: A list of entries found or None.
+            :return: A list of TextContent entries found, or a message indicating no results were found.
             """
 
             # Log query_filter
@@ -156,13 +189,16 @@ class QdrantMCPServer(FastMCP):
                 query_filter=query_filter,
             )
             if not entries:
-                return None
-            content = [
-                f"Results for the query '{query}'",
-            ]
+                return [TextContent(type="text", text=f"No results found for the query '{query}'.")]
+            
+            # Format results with a clean header
+            result_text = f"Results for the query '{query}':\n\n"
+            formatted_entries = []
             for entry in entries:
-                content.append(self.format_entry(entry))
-            return content
+                formatted_entries.append(self.format_entry(entry))
+            result_text += "\n\n".join(formatted_entries)
+            
+            return [TextContent(type="text", text=result_text)]
 
         find_foo = find
         store_foo = store
