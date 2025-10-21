@@ -123,7 +123,7 @@ uv run python run_http_server.py
 2. **Set in batch/PowerShell script** that starts the server
 3. **Fallback defaults in `run_http_server.py`** (lowest priority)
 
-**Key Learning**: The `run_http_server.py` file has fallback defaults (line 12: `COLLECTION_NAME = "ws-77b2ac62ce00ae8e"`). These take effect if env vars aren't set BEFORE the server starts.
+**Key Learning**: The `run_http_server.py` file has fallback defaults (line 12: `COLLECTION_NAME = "your-collection-name"`). These take effect if env vars aren't set BEFORE the server starts.
 
 ### Settings Class Behavior
 
@@ -193,8 +193,8 @@ async with sse_client("http://localhost:8765/sse") as (read, write):
 - **Fix**: Server code already handles this - just ensure using correct collection
 
 ### 3. **Multiple Collections with Similar Names**
-- `ws-77b2ac62ce00ae8e` (old/default)
-- `ws-fbaa5e241f1ea709` (actual data)
+- `default-collection` (old/default)
+- `actual-collection` (actual data)
 - **Fix**: Always verify which collection has the data
 
 ### 4. **Background Server Processes**

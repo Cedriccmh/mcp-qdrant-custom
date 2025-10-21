@@ -10,9 +10,14 @@ def main():
     protocol.
     """
     
+    # Get logging settings
+    from mcp_server_qdrant.settings import LoggingSettings
+    logging_settings = LoggingSettings()
+    log_level = getattr(logging, logging_settings.log_level.upper(), logging.INFO)
+    
     # Configure logging - MUST use stderr to not interfere with stdio transport
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=log_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         stream=sys.stderr,
         force=True

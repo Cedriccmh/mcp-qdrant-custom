@@ -3,18 +3,15 @@
 import os
 import sys
 
-# 设置环境变量
-os.environ["QDRANT_URL"] = "http://localhost:6333"
-os.environ["COLLECTION_NAME"] = "test"
-os.environ["EMBEDDING_PROVIDER"] = "openai_compatible"
-os.environ["OPENAI_API_KEY"] = "sk-test"
-os.environ["OPENAI_BASE_URL"] = "https://api.siliconflow.cn/v1"
-os.environ["EMBEDDING_MODEL"] = "Qwen/Qwen3-Embedding-8B"
-os.environ["OPENAI_VECTOR_SIZE"] = "4096"
+# Load configuration from .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 print("=" * 60, file=sys.stderr)
 print("Quick Test - MCP Server Initialization", file=sys.stderr)
 print("=" * 60, file=sys.stderr)
+print("Configuration loaded from .env file", file=sys.stderr)
+print("", file=sys.stderr)
 
 try:
     print("\n[1/3] Importing server module...", file=sys.stderr)

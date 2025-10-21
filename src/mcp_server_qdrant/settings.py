@@ -1,9 +1,22 @@
 from typing import Literal
+import os
+from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
 
 from mcp_server_qdrant.embeddings.types import EmbeddingProviderType
+
+# Load .env file from project root
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"[Settings] Loaded environment from {env_path}")
+else:
+    # Try to load from current working directory
+    load_dotenv()
+    print("[Settings] No .env file found in project root, using system environment variables")
 
 DEFAULT_TOOL_STORE_DESCRIPTION = (
     "Keep the memory for later use, when you are asked to remember something."
@@ -63,6 +76,11 @@ class EmbeddingProviderSettings(BaseSettings):
         validation_alias="OPENAI_VECTOR_SIZE",
         description="Vector size for the embedding model (e.g., 1536 for text-embedding-ada-002)"
     )
+    openai_timeout: float = Field(
+        default=30.0,
+        validation_alias="OPENAI_TIMEOUT",
+        description="Request timeout in seconds for OpenAI API calls"
+    )
 
 
 class FilterableField(BaseModel):
@@ -101,6 +119,13 @@ class QdrantSettings(BaseSettings):
     local_path: str | None = Field(default=None, validation_alias="QDRANT_LOCAL_PATH")
     search_limit: int = Field(default=10, validation_alias="QDRANT_SEARCH_LIMIT")
     read_only: bool = Field(default=False, validation_alias="QDRANT_READ_ONLY")
+    score_threshold: float | None = Field(
+        default=None, 
+        validation_alias="QDRANT_SCORE_THRESHOLD",
+        description="Minimum similarity score threshold for search results (0.0-1.0 for cosine similarity). "
+                    "Results with scores below this threshold will be filtered out. "
+                    "Default is None (no filtering)."
+    )
 
     filterable_fields: list[FilterableField] | None = Field(default=None)
 
@@ -130,3 +155,37 @@ class QdrantSettings(BaseSettings):
                     "If 'local_path' is set, 'location' and 'api_key' must be None."
                 )
         return self
+
+
+class ServerSettings(BaseSettings):
+    """
+    Configuration for the MCP server.
+    """
+    
+    port: int = Field(
+        default=8765,
+        validation_alias="PORT",
+        description="Port for HTTP/SSE server"
+    )
+    fastmcp_port: int = Field(
+        default=8765,
+        validation_alias="FASTMCP_PORT",
+        description="FastMCP server port"
+    )
+    qdrant_data_path: str | None = Field(
+        default=None,
+        validation_alias="QDRANT_DATA_PATH",
+        description="Docker Qdrant data volume path"
+    )
+
+
+class LoggingSettings(BaseSettings):
+    """
+    Configuration for logging.
+    """
+    
+    log_level: str = Field(
+        default="INFO",
+        validation_alias="LOG_LEVEL",
+        description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
+    )

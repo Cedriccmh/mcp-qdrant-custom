@@ -77,6 +77,7 @@ class QdrantMCPServer(FastMCP):
             self.embedding_provider,
             qdrant_settings.local_path,
             make_indexes(qdrant_settings.filterable_fields_dict()),
+            qdrant_settings.score_threshold,
         )
 
         logger.info("Initializing FastMCP parent class...")

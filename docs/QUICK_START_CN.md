@@ -32,7 +32,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 # 设置环境变量并运行
 QDRANT_URL="http://localhost:6333" \
-COLLECTION_NAME="ws-77b2ac62ce00ae8e" \
+COLLECTION_NAME="your-collection-name" \
 uvx mcp-server-qdrant
 ```
 
@@ -50,7 +50,7 @@ uvx mcp-server-qdrant
       "args": ["mcp-server-qdrant"],
       "env": {
         "QDRANT_URL": "http://localhost:6333",
-        "COLLECTION_NAME": "ws-77b2ac62ce00ae8e",
+        "COLLECTION_NAME": "your-collection-name",
         "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
       }
     }
@@ -66,7 +66,7 @@ uvx mcp-server-qdrant
 | 环境变量 | 说明 | 示例 |
 |---------|------|------|
 | `QDRANT_URL` 或 `QDRANT_LOCAL_PATH` | Qdrant 服务地址或本地路径 | `http://localhost:6333` |
-| `COLLECTION_NAME` | 向量集合名称 | `ws-77b2ac62ce00ae8e` |
+| `COLLECTION_NAME` | 向量集合名称 | `your-collection-name` |
 
 ### 可选配置
 | 环境变量 | 说明 | 默认值 |

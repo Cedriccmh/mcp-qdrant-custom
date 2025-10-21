@@ -1,485 +1,370 @@
-# mcp-server-qdrant: A Qdrant MCP server
+# mcp-server-qdrant (Enhanced Version)
+
+**基于 FastMCP 的 Qdrant 向量数据库 MCP 服务器** | *Qdrant Vector Database MCP Server based on FastMCP*
 
 [![smithery badge](https://smithery.ai/badge/mcp-server-qdrant)](https://smithery.ai/protocol/mcp-server-qdrant)
 
-> The [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) is an open protocol that enables
-> seamless integration between LLM applications and external data sources and tools. Whether you're building an
-> AI-powered IDE, enhancing a chat interface, or creating custom AI workflows, MCP provides a standardized way to
-> connect LLMs with the context they need.
+---
 
-This repository is an example of how to create a MCP server for [Qdrant](https://qdrant.tech/), a vector search engine.
+## 📖 概述 | Overview
 
-## Overview
+**中文：** 这是一个增强版的 [Qdrant](https://qdrant.tech/) MCP (Model Context Protocol) 服务器，为 LLM 应用提供语义记忆存储和检索能力。
 
-An official Model Context Protocol server for keeping and retrieving memories in the Qdrant vector search engine.
-It acts as a semantic memory layer on top of the Qdrant database.
+**English:** An enhanced [Qdrant](https://qdrant.tech/) MCP (Model Context Protocol) server that provides semantic memory storage and retrieval for LLM applications.
 
-## Components
+### ✨ 增强特性 | Enhanced Features
 
-### Tools
+- 🎯 **相似度阈值过滤** | Score threshold filtering for better result quality
+- 📝 **完善的配置文档** | Comprehensive configuration documentation
+- 🐳 **优化的 Docker 支持** | Improved Docker support
+- 🔧 **灵活的嵌入模型** | Flexible embedding provider support (FastEmbed / OpenAI-compatible)
+- 📊 **完整的测试套件** | Complete test suite in `tests/` directory
 
-1. `qdrant-store`
-   - Store some information in the Qdrant database
-   - Input:
-     - `information` (string): Information to store
-     - `metadata` (JSON): Optional metadata to store
-     - `collection_name` (string): Name of the collection to store the information in. This field is required if there are no default collection name.
-                                   If there is a default collection name, this field is not enabled.
-   - Returns: Confirmation message
-2. `qdrant-find`
-   - Retrieve relevant information from the Qdrant database
-   - Input:
-     - `query` (string): Query to use for searching
-     - `collection_name` (string): Name of the collection to store the information in. This field is required if there are no default collection name.
-                                   If there is a default collection name, this field is not enabled.
-   - Returns: Information stored in the Qdrant database as separate messages
+---
 
-## Environment Variables
+## 🚀 快速开始 | Quick Start
 
-The configuration of the server is done using environment variables:
-
-| Name                     | Description                                                         | Default Value                                                     |
-|--------------------------|---------------------------------------------------------------------|-------------------------------------------------------------------|
-| `QDRANT_URL`             | URL of the Qdrant server                                            | None                                                              |
-| `QDRANT_API_KEY`         | API key for the Qdrant server                                       | None                                                              |
-| `COLLECTION_NAME`        | Name of the default collection to use.                              | None                                                              |
-| `QDRANT_LOCAL_PATH`      | Path to the local Qdrant database (alternative to `QDRANT_URL`)     | None                                                              |
-| `EMBEDDING_PROVIDER`     | Embedding provider to use (currently only "fastembed" is supported) | `fastembed`                                                       |
-| `EMBEDDING_MODEL`        | Name of the embedding model to use                                  | `sentence-transformers/all-MiniLM-L6-v2`                          |
-| `TOOL_STORE_DESCRIPTION` | Custom description for the store tool                               | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
-| `TOOL_FIND_DESCRIPTION`  | Custom description for the find tool                                | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
-
-Note: You cannot provide both `QDRANT_URL` and `QDRANT_LOCAL_PATH` at the same time.
-
-> [!IMPORTANT]
-> Command-line arguments are not supported anymore! Please use environment variables for all configuration.
-
-### FastMCP Environment Variables
-
-Since `mcp-server-qdrant` is based on FastMCP, it also supports all the FastMCP environment variables. The most
-important ones are listed below:
-
-| Environment Variable                  | Description                                               | Default Value |
-|---------------------------------------|-----------------------------------------------------------|---------------|
-| `FASTMCP_DEBUG`                       | Enable debug mode                                         | `false`       |
-| `FASTMCP_LOG_LEVEL`                   | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) | `INFO`        |
-| `FASTMCP_HOST`                        | Host address to bind the server to                        | `127.0.0.1`   |
-| `FASTMCP_PORT`                        | Port to run the server on                                 | `8000`        |
-| `FASTMCP_WARN_ON_DUPLICATE_RESOURCES` | Show warnings for duplicate resources                     | `true`        |
-| `FASTMCP_WARN_ON_DUPLICATE_TOOLS`     | Show warnings for duplicate tools                         | `true`        |
-| `FASTMCP_WARN_ON_DUPLICATE_PROMPTS`   | Show warnings for duplicate prompts                       | `true`        |
-| `FASTMCP_DEPENDENCIES`                | List of dependencies to install in the server environment | `[]`          |
-
-## Installation
-
-### Using uvx
-
-When using [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools) no specific installation is needed to directly run *mcp-server-qdrant*.
-
-```shell
-QDRANT_URL="http://localhost:6333" \
-COLLECTION_NAME="my-collection" \
-EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2" \
-uvx mcp-server-qdrant
-```
-
-#### Transport Protocols
-
-The server supports different transport protocols that can be specified using the `--transport` flag:
-
-```shell
-QDRANT_URL="http://localhost:6333" \
-COLLECTION_NAME="my-collection" \
-uvx mcp-server-qdrant --transport sse
-```
-
-Supported transport protocols:
-
-- `stdio` (default): Standard input/output transport, might only be used by local MCP clients
-- `sse`: Server-Sent Events transport, perfect for remote clients
-- `streamable-http`: Streamable HTTP transport, perfect for remote clients, more recent than SSE
-
-The default transport is `stdio` if not specified.
-
-When SSE transport is used, the server will listen on the specified port and wait for incoming connections. The default
-port is 8000, however it can be changed using the `FASTMCP_PORT` environment variable.
-
-```shell
-QDRANT_URL="http://localhost:6333" \
-COLLECTION_NAME="my-collection" \
-FASTMCP_PORT=1234 \
-uvx mcp-server-qdrant --transport sse
-```
-
-### Using Docker
-
-A Dockerfile is available for building and running the MCP server:
+### 1️⃣ 安装 | Installation
 
 ```bash
-# Build the container
+# 或从源码安装 | Or install from source
+git clone <repository-url>
+cd mcp-qdrant-custom
+```
+
+### 2️⃣ 配置 | Configuration
+
+**复制配置模板** | *Copy configuration template:*
+
+```bash
+# Windows
+copy .env.example .env
+
+# Linux/macOS
+cp .env.example .env
+```
+
+**编辑 `.env` 文件** | *Edit `.env` file:*
+
+```env
+# Qdrant 连接 | Qdrant Connection
+QDRANT_URL=http://localhost:6333
+COLLECTION_NAME=your-collection
+
+# 嵌入模型 | Embedding Model
+EMBEDDING_PROVIDER=openai_compatible
+EMBEDDING_MODEL=Qwen/Qwen3-Embedding-8B
+OPENAI_API_KEY=your-api-key
+OPENAI_BASE_URL=https://api.siliconflow.cn/v1
+OPENAI_VECTOR_SIZE=4096
+
+# 可选：相似度阈值 | Optional: Score Threshold
+QDRANT_SCORE_THRESHOLD=0.5
+```
+
+📚 **详细配置指南** | *Detailed configuration:* 查看 | See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md)
+
+### 3️⃣ 运行服务器 | Run Server
+
+```bash
+# Windows
+start_mcp_server.bat
+
+# Python 直接运行 | Run with Python
+uv run python run_http_server.py
+
+# 或开发模式 | Or development mode
+COLLECTION_NAME=test fastmcp dev src/mcp_server_qdrant/server.py
+```
+
+### 4️⃣ 使用 Docker | Using Docker
+
+```bash
+# 构建镜像 | Build image
 docker build -t mcp-server-qdrant .
 
-# Run the container
-docker run -p 8000:8000 \
-  -e FASTMCP_HOST="0.0.0.0" \
-  -e QDRANT_URL="http://your-qdrant-server:6333" \
-  -e QDRANT_API_KEY="your-api-key" \
-  -e COLLECTION_NAME="your-collection" \
+# 运行容器 (FastEmbed) | Run with FastEmbed
+docker run -p 8765:8765 \
+  -e QDRANT_URL=http://your-qdrant:6333 \
+  -e COLLECTION_NAME=your-collection \
+  mcp-server-qdrant
+
+# 使用 OpenAI 兼容嵌入 | With OpenAI-compatible embeddings
+docker run -p 8765:8765 \
+  -e QDRANT_URL=http://your-qdrant:6333 \
+  -e COLLECTION_NAME=your-collection \
+  -e EMBEDDING_PROVIDER=openai_compatible \
+  -e EMBEDDING_MODEL=text-embedding-3-small \
+  -e OPENAI_API_KEY=your-api-key \
+  -e OPENAI_VECTOR_SIZE=1536 \
   mcp-server-qdrant
 ```
 
-> [!TIP]
-> Please note that we set `FASTMCP_HOST="0.0.0.0"` to make the server listen on all network interfaces. This is
-> necessary when running the server in a Docker container.
+🐳 **Docker 故障排除** | *Docker troubleshooting:* [`docs/DOCKER_TROUBLESHOOTING.md`](docs/DOCKER_TROUBLESHOOTING.md)
 
-### Installing via Smithery
+---
 
-To install Qdrant MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/protocol/mcp-server-qdrant):
+## 🛠️ 核心功能 | Core Features
+
+### MCP 工具 | MCP Tools
+
+#### 1. `qdrant-store`
+**存储信息到 Qdrant** | *Store information in Qdrant*
+
+```json
+{
+  "information": "描述或内容 | Description or content",
+  "metadata": {"key": "value"},
+  "collection_name": "可选 | Optional (if default set)"
+}
+```
+
+#### 2. `qdrant-find`
+**语义搜索相关信息** | *Semantic search for relevant information*
+
+```json
+{
+  "query": "搜索查询 | Search query",
+  "collection_name": "可选 | Optional (if default set)"
+}
+```
+
+---
+
+## ⚙️ 环境变量 | Environment Variables
+
+### 核心配置 | Core Settings
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `QDRANT_URL` | Qdrant 服务器 URL | 无 |
+| `QDRANT_API_KEY` | Qdrant API 密钥 | 无 |
+| `COLLECTION_NAME` | 默认集合名称 | 无 |
+| `QDRANT_LOCAL_PATH` | 本地 Qdrant 路径 | 无 |
+
+### 搜索配置 | Search Settings
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `QDRANT_SEARCH_LIMIT` | 最大结果数 | `10` |
+| `QDRANT_SCORE_THRESHOLD` | 🆕 相似度阈值 (0.0-1.0) | 无 (不过滤) |
+| `QDRANT_READ_ONLY` | 只读模式 | `false` |
+
+### 嵌入模型配置 | Embedding Settings
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `EMBEDDING_PROVIDER` | `fastembed` 或 `openai_compatible` | `fastembed` |
+| `EMBEDDING_MODEL` | 模型名称 | `sentence-transformers/all-MiniLM-L6-v2` |
+| `OPENAI_API_KEY` | OpenAI 兼容 API 密钥 | 无 |
+| `OPENAI_BASE_URL` | API 端点 | `https://api.openai.com/v1` |
+| `OPENAI_VECTOR_SIZE` | 向量维度 | `1536` |
+
+### 服务器配置 | Server Settings
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `PORT` / `FASTMCP_PORT` | 服务器端口 | `8765` |
+| `LOG_LEVEL` | 日志级别 | `INFO` |
+
+📖 **完整配置参考** | *Full reference:* [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md)
+
+---
+
+## 🎯 新功能：相似度阈值 | New: Score Threshold
+
+**中文：** 通过设置最低相似度阈值，过滤掉不相关的搜索结果，提高结果质量。
+
+**English:** Filter out irrelevant search results by setting a minimum similarity score threshold.
+
+```env
+# 推荐值 | Recommended values:
+QDRANT_SCORE_THRESHOLD=0.3  # 宽松：更多结果 | Relaxed: more results
+QDRANT_SCORE_THRESHOLD=0.5  # 平衡：推荐值 | Balanced: recommended
+QDRANT_SCORE_THRESHOLD=0.7  # 严格：高相关度 | Strict: high relevance
+```
+
+📊 **详细说明** | *Detailed guide:* [`docs/SCORE_THRESHOLD_FEATURE.md`](docs/SCORE_THRESHOLD_FEATURE.md)
+
+---
+
+## 📦 集成示例 | Integration Examples
+
+### Claude Desktop / Cursor / Windsurf
+
+**在 Cursor/Windsurf 中添加 MCP 服务器** | *Add MCP Server in Cursor/Windsurf:*
+
+```
+http://localhost:8765/sse
+```
+
+**说明** | *Note:*
+- 默认端口为 `8765` (可通过 `.env` 中的 `PORT` 变量修改)
+- 确保服务器已使用 `start_mcp_server.bat` 或 `run_http_server.py` 启动
+- Default port is `8765` (can be changed via `PORT` in `.env`)
+- Make sure server is running via `start_mcp_server.bat` or `run_http_server.py`
+
+### VS Code
+
+点击安装 | *Click to install:*
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D)
+
+---
+
+## 🧪 测试 | Testing
 
 ```bash
-npx @smithery/cli install mcp-server-qdrant --client claude
+# 快速测试 | Quick test
+uv run python tests/quick_test.py
+
+# 完整测试套件 | Full test suite
+uv run pytest tests/
+
+# 特定测试 | Specific tests
+uv run python tests/test_score_threshold.py
+uv run python tests/test_fastembed_integration.py
 ```
 
-### Manual configuration of Claude Desktop
+📋 **测试文档** | *Test documentation:* [`tests/README.md`](tests/README.md)
 
-To use this server with the Claude Desktop app, add the following configuration to the "mcpServers" section of your
-`claude_desktop_config.json`:
+---
 
-```json
-{
-  "qdrant": {
-    "command": "uvx",
-    "args": ["mcp-server-qdrant"],
-    "env": {
-      "QDRANT_URL": "https://xyz-example.eu-central.aws.cloud.qdrant.io:6333",
-      "QDRANT_API_KEY": "your_api_key",
-      "COLLECTION_NAME": "your-collection-name",
-      "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
-    }
-  }
-}
-```
+## 📚 文档索引 | Documentation
 
-For local Qdrant mode:
+| 文档 | 说明 |
+|------|------|
+| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | 完整配置指南 \| Complete configuration guide |
+| [`docs/SCORE_THRESHOLD_FEATURE.md`](docs/SCORE_THRESHOLD_FEATURE.md) | 相似度阈值功能 \| Score threshold feature |
+| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | 常见问题排查 \| Common troubleshooting |
+| [`docs/DEBUGGING_GUIDE.md`](docs/DEBUGGING_GUIDE.md) | 深度调试指南 \| Deep debugging guide |
+| [`docs/DOCKER_TROUBLESHOOTING.md`](docs/DOCKER_TROUBLESHOOTING.md) | Docker 问题排查 \| Docker troubleshooting |
+| [`docs/QUICK_START_CN.md`](docs/QUICK_START_CN.md) | 中文快速开始 \| Chinese quick start |
 
-```json
-{
-  "qdrant": {
-    "command": "uvx",
-    "args": ["mcp-server-qdrant"],
-    "env": {
-      "QDRANT_LOCAL_PATH": "/path/to/qdrant/database",
-      "COLLECTION_NAME": "your-collection-name",
-      "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
-    }
-  }
-}
-```
+---
 
-This MCP server will automatically create a collection with the specified name if it doesn't exist.
-
-By default, the server will use the `sentence-transformers/all-MiniLM-L6-v2` embedding model to encode memories.
-For the time being, only [FastEmbed](https://qdrant.github.io/fastembed/) models are supported.
-
-## Support for other tools
-
-This MCP server can be used with any MCP-compatible client. For example, you can use it with
-[Cursor](https://docs.cursor.com/context/model-context-protocol) and [VS Code](https://code.visualstudio.com/docs), which provide built-in support for the Model Context
-Protocol.
-
-### Using with Cursor/Windsurf
-
-You can configure this MCP server to work as a code search tool for Cursor or Windsurf by customizing the tool
-descriptions:
+## 🔧 传输协议 | Transport Protocols
 
 ```bash
-QDRANT_URL="http://localhost:6333" \
-COLLECTION_NAME="code-snippets" \
-TOOL_STORE_DESCRIPTION="Store reusable code snippets for later retrieval. \
-The 'information' parameter should contain a natural language description of what the code does, \
-while the actual code should be included in the 'metadata' parameter as a 'code' property. \
-The value of 'metadata' is a Python dictionary with strings as keys. \
-Use this whenever you generate some code snippet." \
-TOOL_FIND_DESCRIPTION="Search for relevant code snippets based on natural language descriptions. \
-The 'query' parameter should describe what you're looking for, \
-and the tool will return the most relevant code snippets. \
-Use this when you need to find existing code snippets for reuse or reference." \
-uvx mcp-server-qdrant --transport sse # Enable SSE transport
+# STDIO (默认，本地客户端) | STDIO (default, local clients)
+uvx mcp-server-qdrant
+
+# SSE (推荐，远程连接) | SSE (recommended, remote connections)
+uvx mcp-server-qdrant --transport sse
+
+# Streamable HTTP (现代协议) | Streamable HTTP (modern protocol)
+uvx mcp-server-qdrant --transport streamable-http
 ```
 
-In Cursor/Windsurf, you can then configure the MCP server in your settings by pointing to this running server using
-SSE transport protocol. The description on how to add an MCP server to Cursor can be found in the [Cursor
-documentation](https://docs.cursor.com/context/model-context-protocol#adding-an-mcp-server-to-cursor). If you are
-running Cursor/Windsurf locally, you can use the following URL:
+---
 
-```
-http://localhost:8000/sse
-```
+## 🌐 嵌入模型提供商 | Embedding Providers
 
-> [!TIP]
-> We suggest SSE transport as a preferred way to connect Cursor/Windsurf to the MCP server, as it can support remote
-> connections. That makes it easy to share the server with your team or use it in a cloud environment.
-
-This configuration transforms the Qdrant MCP server into a specialized code search tool that can:
-
-1. Store code snippets, documentation, and implementation details
-2. Retrieve relevant code examples based on semantic search
-3. Help developers find specific implementations or usage patterns
-
-You can populate the database by storing natural language descriptions of code snippets (in the `information` parameter)
-along with the actual code (in the `metadata.code` property), and then search for them using natural language queries
-that describe what you're looking for.
-
-> [!NOTE]
-> The tool descriptions provided above are examples and may need to be customized for your specific use case. Consider
-> adjusting the descriptions to better match your team's workflow and the specific types of code snippets you want to
-> store and retrieve.
-
-**If you have successfully installed the `mcp-server-qdrant`, but still can't get it to work with Cursor, please
-consider creating the [Cursor rules](https://docs.cursor.com/context/rules-for-ai) so the MCP tools are always used when
-the agent produces a new code snippet.** You can restrict the rules to only work for certain file types, to avoid using
-the MCP server for the documentation or other types of content.
-
-### Using with Claude Code
-
-You can enhance Claude Code's capabilities by connecting it to this MCP server, enabling semantic search over your
-existing codebase.
-
-#### Setting up mcp-server-qdrant
-
-1. Add the MCP server to Claude Code:
-
-    ```shell
-    # Add mcp-server-qdrant configured for code search
-    claude mcp add code-search \
-    -e QDRANT_URL="http://localhost:6333" \
-    -e COLLECTION_NAME="code-repository" \
-    -e EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2" \
-    -e TOOL_STORE_DESCRIPTION="Store code snippets with descriptions. The 'information' parameter should contain a natural language description of what the code does, while the actual code should be included in the 'metadata' parameter as a 'code' property." \
-    -e TOOL_FIND_DESCRIPTION="Search for relevant code snippets using natural language. The 'query' parameter should describe the functionality you're looking for." \
-    -- uvx mcp-server-qdrant
-    ```
-
-2. Verify the server was added:
-
-    ```shell
-    claude mcp list
-    ```
-
-#### Using Semantic Code Search in Claude Code
-
-Tool descriptions, specified in `TOOL_STORE_DESCRIPTION` and `TOOL_FIND_DESCRIPTION`, guide Claude Code on how to use
-the MCP server. The ones provided above are examples and may need to be customized for your specific use case. However,
-Claude Code should be already able to:
-
-1. Use the `qdrant-store` tool to store code snippets with descriptions.
-2. Use the `qdrant-find` tool to search for relevant code snippets using natural language.
-
-### Run MCP server in Development Mode
-
-The MCP server can be run in development mode using the `mcp dev` command. This will start the server and open the MCP
-inspector in your browser.
-
-```shell
-COLLECTION_NAME=mcp-dev fastmcp dev src/mcp_server_qdrant/server.py
+### 1. FastEmbed (本地，免费)
+```env
+EMBEDDING_PROVIDER=fastembed
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 ```
 
-### Using with VS Code
-
-For one-click installation, click one of the install buttons below:
-
-[![Install with UVX in VS Code](https://img.shields.io/badge/VS_Code-UVX-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D) [![Install with UVX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-UVX-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D&quality=insiders)
-
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-p%22%2C%228000%3A8000%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-p%22%2C%228000%3A8000%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D&quality=insiders)
-
-#### Manual Installation
-
-Add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
-
-```json
-{
-  "mcp": {
-    "inputs": [
-      {
-        "type": "promptString",
-        "id": "qdrantUrl",
-        "description": "Qdrant URL"
-      },
-      {
-        "type": "promptString",
-        "id": "qdrantApiKey",
-        "description": "Qdrant API Key",
-        "password": true
-      },
-      {
-        "type": "promptString",
-        "id": "collectionName",
-        "description": "Collection Name"
-      }
-    ],
-    "servers": {
-      "qdrant": {
-        "command": "uvx",
-        "args": ["mcp-server-qdrant"],
-        "env": {
-          "QDRANT_URL": "${input:qdrantUrl}",
-          "QDRANT_API_KEY": "${input:qdrantApiKey}",
-          "COLLECTION_NAME": "${input:collectionName}"
-        }
-      }
-    }
-  }
-}
+### 2. OpenAI
+```env
+EMBEDDING_PROVIDER=openai_compatible
+EMBEDDING_MODEL=text-embedding-3-small
+OPENAI_API_KEY=sk-...
+OPENAI_VECTOR_SIZE=1536
 ```
 
-Or if you prefer using Docker, add this configuration instead:
-
-```json
-{
-  "mcp": {
-    "inputs": [
-      {
-        "type": "promptString",
-        "id": "qdrantUrl",
-        "description": "Qdrant URL"
-      },
-      {
-        "type": "promptString",
-        "id": "qdrantApiKey",
-        "description": "Qdrant API Key",
-        "password": true
-      },
-      {
-        "type": "promptString",
-        "id": "collectionName",
-        "description": "Collection Name"
-      }
-    ],
-    "servers": {
-      "qdrant": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-p", "8000:8000",
-          "-i",
-          "--rm",
-          "-e", "QDRANT_URL",
-          "-e", "QDRANT_API_KEY",
-          "-e", "COLLECTION_NAME",
-          "mcp-server-qdrant"
-        ],
-        "env": {
-          "QDRANT_URL": "${input:qdrantUrl}",
-          "QDRANT_API_KEY": "${input:qdrantApiKey}",
-          "COLLECTION_NAME": "${input:collectionName}"
-        }
-      }
-    }
-  }
-}
+### 3. Ollama (本地)
+```env
+EMBEDDING_PROVIDER=openai_compatible
+EMBEDDING_MODEL=nomic-embed-text
+OPENAI_BASE_URL=http://localhost:11434/v1
+OPENAI_VECTOR_SIZE=768
 ```
 
-Alternatively, you can create a `.vscode/mcp.json` file in your workspace with the following content:
-
-```json
-{
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "qdrantUrl",
-      "description": "Qdrant URL"
-    },
-    {
-      "type": "promptString",
-      "id": "qdrantApiKey",
-      "description": "Qdrant API Key",
-      "password": true
-    },
-    {
-      "type": "promptString",
-      "id": "collectionName",
-      "description": "Collection Name"
-    }
-  ],
-  "servers": {
-    "qdrant": {
-      "command": "uvx",
-      "args": ["mcp-server-qdrant"],
-      "env": {
-        "QDRANT_URL": "${input:qdrantUrl}",
-        "QDRANT_API_KEY": "${input:qdrantApiKey}",
-        "COLLECTION_NAME": "${input:collectionName}"
-      }
-    }
-  }
-}
+### 4. SiliconFlow (中国)
+```env
+EMBEDDING_PROVIDER=openai_compatible
+EMBEDDING_MODEL=Qwen/Qwen3-Embedding-8B
+OPENAI_API_KEY=sk-...
+OPENAI_BASE_URL=https://api.siliconflow.cn/v1
+OPENAI_VECTOR_SIZE=4096
 ```
 
-For workspace configuration with Docker, use this in `.vscode/mcp.json`:
+---
 
-```json
-{
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "qdrantUrl",
-      "description": "Qdrant URL"
-    },
-    {
-      "type": "promptString",
-      "id": "qdrantApiKey",
-      "description": "Qdrant API Key",
-      "password": true
-    },
-    {
-      "type": "promptString",
-      "id": "collectionName",
-      "description": "Collection Name"
-    }
-  ],
-  "servers": {
-    "qdrant": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-p", "8000:8000",
-        "-i",
-        "--rm",
-        "-e", "QDRANT_URL",
-        "-e", "QDRANT_API_KEY",
-        "-e", "COLLECTION_NAME",
-        "mcp-server-qdrant"
-      ],
-      "env": {
-        "QDRANT_URL": "${input:qdrantUrl}",
-        "QDRANT_API_KEY": "${input:qdrantApiKey}",
-        "COLLECTION_NAME": "${input:collectionName}"
-      }
-    }
-  }
-}
-```
+## 🐛 故障排查 | Troubleshooting
 
-## Contributing
+### 常见问题 | Common Issues
 
-If you have suggestions for how mcp-server-qdrant could be improved, or want to report a bug, open an issue!
-We'd love all and any contributions.
+**服务器无法启动？** | *Server won't start?*
+- 检查 `.env` 配置 | Check `.env` configuration
+- 验证 Qdrant 连接 | Verify Qdrant connection
+- 查看日志输出 | Check log output
 
-### Testing `mcp-server-qdrant` locally
+**搜索结果不相关？** | *Irrelevant search results?*
+- 调整 `QDRANT_SCORE_THRESHOLD` | Adjust score threshold
+- 检查嵌入模型一致性 | Verify embedding model consistency
+- 提高搜索限制 | Increase search limit
 
-The [MCP inspector](https://github.com/modelcontextprotocol/inspector) is a developer tool for testing and debugging MCP
-servers. It runs both a client UI (default port 5173) and an MCP proxy server (default port 3000). Open the client UI in
-your browser to use the inspector.
+**嵌入错误？** | *Embedding errors?*
+- 确认 API 密钥正确 | Confirm API key is correct
+- 检查向量维度匹配 | Check vector size matches
+- 验证 API 端点可访问 | Verify API endpoint is accessible
 
-```shell
-QDRANT_URL=":memory:" COLLECTION_NAME="test" \
+📖 **详细排查步骤** | *Detailed troubleshooting:* [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)
+
+---
+
+## 🔐 安全注意事项 | Security Notes
+
+⚠️ **重要** | *Important:*
+
+1. **不要提交 `.env` 到版本控制** | *Never commit `.env` to version control*
+2. **保护 API 密钥** | *Protect API keys*
+3. **使用适当的文件权限** | *Use proper file permissions*
+4. **生产环境使用密钥管理系统** | *Use secret management in production*
+
+---
+
+## 🤝 贡献 | Contributing
+
+欢迎提交问题和功能请求！| *Issues and feature requests are welcome!*
+
+### 本地开发 | Local Development
+
+```bash
+# 克隆仓库 | Clone repository
+git clone <repository-url>
+cd mcp-qdrant-custom
+
+# 安装依赖 | Install dependencies
+uv sync
+
+# 运行开发服务器 | Run dev server
 fastmcp dev src/mcp_server_qdrant/server.py
+
+# 运行测试 | Run tests
+uv run pytest
 ```
 
-Once started, open your browser to http://localhost:5173 to access the inspector interface.
+---
 
-## License
+## 📄 许可证 | License
 
-This MCP server is licensed under the Apache License 2.0. This means you are free to use, modify, and distribute the
-software, subject to the terms and conditions of the Apache License 2.0. For more details, please see the LICENSE file
-in the project repository.
+Apache License 2.0 - 详见 [`LICENSE`](LICENSE) 文件 | *See [`LICENSE`](LICENSE) file for details*
+
+---
+
+## 🔗 相关链接 | Related Links
+
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [Qdrant Documentation](https://qdrant.tech/documentation/)
+- [FastMCP](https://github.com/jlowin/fastmcp)
+- [FastEmbed](https://qdrant.github.io/fastembed/)
+
+---
+
+**制作者** | *Maintained by:* Your Name/Organization
+
+**基于** | *Based on:* [mcp-server-qdrant](https://github.com/modelcontextprotocol/servers)

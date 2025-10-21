@@ -8,7 +8,8 @@ Welcome to the Qdrant MCP Server documentation. This folder contains comprehensi
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [CONFIG.md](CONFIG.md) | Server configuration guide | All users |
+| [CONFIGURATION.md](CONFIGURATION.md) | Complete configuration guide (English) | All users |
+| [CONFIG.md](CONFIG.md) | Server configuration guide (Chinese) | Chinese users |
 | [QUICK_START_CN.md](QUICK_START_CN.md) | Chinese quick start guide | Chinese users |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions | All users |
 | [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) | Docker and container issues | All users |
@@ -20,21 +21,38 @@ Welcome to the Qdrant MCP Server documentation. This folder contains comprehensi
 
 ### For Users
 
-#### [CONFIG.md](CONFIG.md)
-**Purpose**: Configuration guide for the Qdrant MCP server.
+#### [CONFIGURATION.md](CONFIGURATION.md)
+**Purpose**: Complete English configuration guide for the Qdrant MCP server.
 
 **Contents**:
-- Environment variables reference
+- Quick start (3-step setup)
+- Complete environment variables reference
 - Embedding provider configuration
 - OpenAI-compatible service setup
-- Collection name configuration
-- Common configuration examples
+- Collection configuration
+- Configuration examples for common scenarios
+- Quick reference tables
+- Troubleshooting configuration issues
 
 **When to use**:
 - Setting up the server for the first time
+- Looking up configuration options
 - Switching embedding providers
 - Connecting to different Qdrant instances
-- Configuring custom collections
+- Troubleshooting configuration issues
+
+---
+
+#### [CONFIG.md](CONFIG.md)
+**Purpose**: Chinese language configuration guide (中文配置指南).
+
+**内容**:
+- Qdrant 服务器配置
+- 嵌入模型配置
+- OpenAI 兼容服务配置
+- 常见配置示例
+
+**适用于**: 中文用户配置服务器
 
 ---
 
@@ -130,10 +148,12 @@ Welcome to the Qdrant MCP Server documentation. This folder contains comprehensi
 
 | Topic | Document | Section |
 |-------|----------|---------|
-| Environment Variables | [CONFIG.md](CONFIG.md) | Configuration Section |
-| Embedding Providers | [CONFIG.md](CONFIG.md) | Embedding Model Configuration |
-| OpenAI-Compatible APIs | [CONFIG.md](CONFIG.md) | OpenAI Compatible Service Config |
-| Collection Names | [CONFIG.md](CONFIG.md) | Qdrant Server Configuration |
+| Environment Variables | [CONFIGURATION.md](CONFIGURATION.md) | Environment Variables Reference |
+| Quick Start | [CONFIGURATION.md](CONFIGURATION.md) | Quick Start |
+| Embedding Providers | [CONFIGURATION.md](CONFIGURATION.md) | Embedding Provider Settings |
+| OpenAI-Compatible APIs | [CONFIGURATION.md](CONFIGURATION.md) | OpenAI Compatible Settings |
+| Collection Names | [CONFIGURATION.md](CONFIGURATION.md) | Collection Settings |
+| Chinese Guide | [CONFIG.md](CONFIG.md) | All sections |
 
 ### Troubleshooting
 
@@ -161,7 +181,7 @@ Welcome to the Qdrant MCP Server documentation. This folder contains comprehensi
 
 ### First Time Setup
 
-1. **Read**: [CONFIG.md](CONFIG.md) - Understand configuration options
+1. **Read**: [CONFIGURATION.md](CONFIGURATION.md) - Understand configuration options
 2. **Configure**: Set environment variables for your setup
 3. **Start**: Use startup script with your configuration
 4. **Verify**: Run `verify_fix.py` to confirm it works
@@ -258,8 +278,8 @@ If you can't find what you're looking for:
 
 | Task | Command | Document |
 |------|---------|----------|
-| **Configure server** | Edit env vars | [CONFIG.md](CONFIG.md) |
-| **Start server** | `powershell -File start_server_correct_config.ps1` | [CONFIG.md](CONFIG.md) |
+| **Configure server** | Edit env vars | [CONFIGURATION.md](CONFIGURATION.md) |
+| **Start server** | `start_mcp_server.bat` | [CONFIGURATION.md](CONFIGURATION.md) |
 | **Verify server** | `uv run python verify_fix.py` | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 | **Debug issues** | Follow diagnostic checklist | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 | **Run tests** | `uv run pytest tests/` | `../tests/README.md` |

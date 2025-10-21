@@ -58,7 +58,7 @@ print(f"Collection: {settings.collection_name}")
 
 ```powershell
 # PowerShell
-$env:COLLECTION_NAME = "ws-fbaa5e241f1ea709"  # Your collection name
+$env:COLLECTION_NAME = "your-collection-name"  # Your collection name
 $env:QDRANT_URL = "http://localhost:6333"
 $env:EMBEDDING_PROVIDER = "openai_compatible"
 $env:EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-8B"

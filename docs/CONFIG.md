@@ -16,7 +16,7 @@ REM ========================================
 REM Qdrant 配置
 set QDRANT_URL=http://localhost:6333
 REM 集合名称 - 可根据需要修改
-set COLLECTION_NAME=ws-77b2ac62ce00ae8e
+set COLLECTION_NAME=your-collection-name
 
 REM 嵌入模型配置
 set EMBEDDING_PROVIDER=openai_compatible
@@ -37,7 +37,7 @@ set OPENAI_VECTOR_SIZE=4096
 | 变量名 | 说明 | 默认值 | 示例 |
 |--------|------|--------|------|
 | `QDRANT_URL` | Qdrant 服务器地址 | - | `http://localhost:6333` |
-| `COLLECTION_NAME` | 集合名称 | - | `ws-77b2ac62ce00ae8e` 或 `my-collection` |
+| `COLLECTION_NAME` | 集合名称 | - | `my-collection` 或 `test-collection` |
 | `QDRANT_API_KEY` | API 密钥（可选） | - | `your-api-key` |
 | `QDRANT_SEARCH_LIMIT` | 搜索结果数量限制 | 10 | `20` |
 | `QDRANT_READ_ONLY` | 只读模式 | false | `true` |
@@ -115,7 +115,7 @@ Server Configuration:
   - Port: 8765
   - URL: http://localhost:8765/sse
   - Storage: Qdrant HTTP Server (http://localhost:6333)
-  - Collection: ws-77b2ac62ce00ae8e
+  - Collection: your-collection-name
   - Embedding Provider: openai_compatible
   - Embedding Model: Qwen/Qwen3-Embedding-8B
 ```

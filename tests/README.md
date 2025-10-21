@@ -4,6 +4,41 @@ This folder contains automated tests for the Qdrant MCP server. Tests are organi
 
 ---
 
+## 📁 Directory Organization
+
+### Tests Folder (`tests/`)
+
+**Automated Tests:**
+- `test_settings.py` - Configuration and environment variable tests
+- `test_fastembed_integration.py` - FastEmbed provider tests
+- `test_qdrant_integration.py` - Qdrant database integration tests
+- `test_qdrant_find_tool.py` - End-to-end tool functionality tests
+- `test_mcp_sse_client.py` - MCP protocol and SSE transport tests
+
+**Utility Scripts:**
+- `quick_test.py` - Quick server initialization smoke test
+- `verify_fix.py` - Server functionality verification after changes
+- `populate_default_collection.py` - Populate test data in Qdrant
+- `test_score_threshold.py` - Test score threshold filtering feature
+- `kill_port_8765.bat` - Kill process on port 8765 (Windows)
+
+### Root Directory
+
+**Server Operation:**
+- `run_http_server.py` - Main server runner (SSE transport)
+- `start_mcp_server.bat` - Windows startup script with auto port cleanup
+- `debug_server.bat` - Debug mode with FastMCP inspector
+
+**Security & Maintenance:**
+- `check_security.ps1` - PowerShell security scanner
+- `check_security.bat` - Batch security scanner
+
+**Configuration:**
+- `.env` - Environment variables (create from `.env.example`)
+- `env.example` / `.env.example` - Environment variable templates
+
+---
+
 ## Running Tests
 
 ### Run All Tests
@@ -222,40 +257,437 @@ Code Chunk: def test_function():...
 
 ## Test Utilities
 
-### Development/Utility Scripts (Root Directory)
+The `tests/` directory contains both automated tests and utility scripts for development and testing.
 
-These scripts are kept in the root directory for development convenience:
+---
+
+### Utility Scripts
 
 #### `quick_test.py`
-**Purpose**: Quick smoke test to verify server can start.
+**Purpose**: Quick smoke test to verify server initialization.
 
+**Location**: `tests/quick_test.py`
+
+**Usage**:
 ```bash
-uv run python quick_test.py
+uv run python tests/quick_test.py
 ```
 
-**Use case**: Verify configuration before running full test suite.
+**What it does**:
+1. Loads configuration from `.env` file
+2. Imports server module and verifies initialization
+3. Checks embedding provider configuration
+4. Validates Qdrant connection settings
+5. Starts server in stdio mode for testing
+
+**When to use**:
+- Quick sanity check before running full test suite
+- Verify configuration after making changes to `.env`
+- Test server startup without full deployment
+- Debug import or initialization errors
+
+**Output**:
+```
+Quick Test - MCP Server Initialization
+Configuration loaded from .env file
+
+[1/3] Importing server module...
+✓ Server module imported successfully
+
+[2/3] Checking server configuration...
+  - Embedding provider: OpenAICompatibleProvider
+  - Vector size: 4096
+  - Collection: your-collection-name
+  - Qdrant URL: http://localhost:6333
+✓ Configuration OK
+
+[3/3] Testing stdio communication...
+  Server is ready for stdio communication
+```
 
 ---
 
 #### `verify_fix.py`
-**Purpose**: Verify server is working after configuration changes.
+**Purpose**: Verify server functionality after configuration changes.
 
+**Location**: `tests/verify_fix.py`
+
+**Usage**:
 ```bash
-uv run python verify_fix.py
+# Requires server running on http://localhost:8765
+uv run python tests/verify_fix.py
 ```
 
-**Use case**: After restarting server, verify it can find results.
+**What it tests**:
+1. SSE connection to running server
+2. Tool invocation with realistic queries
+3. Result validation and counting
+4. Multiple query scenarios
+
+**Test queries**:
+- "embedding provider configuration"
+- "qdrant search query"
+- "MCP server initialization"
+
+**When to use**:
+- After restarting server to verify it works
+- After changing search or embedding configuration
+- To confirm server is returning results
+- Quick integration test without full test suite
+
+**Output**:
+```
+VERIFYING FIX - Testing Realistic Queries
+1. Searching for 'embedding provider configuration'...
+   Found 3 results
+   Preview: Results for query 'embedding provider configuration':...
+
+2. Searching for 'qdrant search query'...
+   Found 5 results
+   Preview: Results for query 'qdrant search query':...
+
+✓ FIX VERIFIED - Server is returning results!
+```
 
 ---
 
 #### `populate_default_collection.py`
-**Purpose**: Populate Qdrant with sample code chunks from the project.
+**Purpose**: Populate Qdrant collection with test data.
 
+**Location**: `tests/populate_default_collection.py`
+
+**Usage**:
 ```bash
-uv run python populate_default_collection.py
+uv run python tests/populate_default_collection.py
 ```
 
-**Use case**: Set up test data for development and testing.
+**What it does**:
+1. Initializes Qdrant connector with settings from `.env`
+2. Creates test entries about programming, AI, databases, protocols
+3. Stores entries in the configured collection
+4. Verifies storage by checking point count
+5. Runs a test search to confirm functionality
+
+**Test data includes**:
+- Python programming language description
+- JavaScript web development info
+- Machine learning concepts
+- Qdrant vector database information
+- MCP protocol details
+
+**When to use**:
+- Initial setup of development environment
+- After creating a new collection
+- To reset test data to known state
+- Before manual testing of search functionality
+- Populate collection for demos
+
+**Output**:
+```
+POPULATING DEFAULT COLLECTION WITH TEST DATA
+1. Initializing Qdrant connector...
+   Collection 'your-collection-name' exists: True
+   Current points count: 0
+
+2. Storing test data...
+   1. Stored: Python is a high-level programming language...
+   2. Stored: JavaScript is the language of the web...
+   3. Stored: Machine learning is a subset of AI...
+   4. Stored: Qdrant is a vector database...
+   5. Stored: The MCP protocol enables seamless integration...
+
+[OK] Stored 5 entries successfully
+
+3. Verifying data storage...
+   Total points in collection: 5
+
+4. Testing semantic search...
+   [OK] Found 3 results for 'programming languages'
+```
+
+**Prerequisites**:
+- `.env` file configured with `COLLECTION_NAME`
+- Qdrant server running (or `:memory:` mode configured)
+- Valid embedding provider configured
+
+---
+
+#### `test_score_threshold.py`
+**Purpose**: Test the score threshold filtering feature.
+
+**Location**: `tests/test_score_threshold.py`
+
+**Usage**:
+```bash
+uv run python tests/test_score_threshold.py
+```
+
+**What it tests**:
+1. Configuration loading from `.env` file
+2. Score threshold setting application
+3. Search with default threshold (from settings)
+4. Search with specific threshold override (0.5)
+5. Search with strict threshold (0.8)
+6. Result count comparison across different thresholds
+
+**Test scenarios**:
+- **Test 1**: Default threshold from `QDRANT_SCORE_THRESHOLD` environment variable
+- **Test 2**: Override with moderate threshold (0.5)
+- **Test 3**: Strict filtering with high threshold (0.8)
+
+**When to use**:
+- After implementing score threshold feature
+- To verify threshold filtering works correctly
+- After changing search or filtering logic
+- To demonstrate threshold behavior with different values
+- During configuration testing
+
+**Output**:
+```
+SCORE THRESHOLD FEATURE TEST
+
+Configuration:
+  Qdrant URL: http://localhost:6333
+  Collection: your-collection-name
+  Search Limit: 20
+  Score Threshold: 0.5
+  Embedding Provider: openai_compatible
+  Embedding Model: Qwen/Qwen3-Embedding-8B
+
+TEST 1: Search with default threshold from settings
+Query: 'artificial intelligence and neural networks'
+
+Results: 4 entries found
+  [1] Score: 0.8523
+      Content: Deep learning uses neural networks with multiple layers
+      Metadata: {'topic': 'DL'}
+  ...
+
+TEST 2: Search with threshold=0.5 (override)
+Results: 3 entries found (filtered by score >= 0.5)
+  ...
+
+TEST 3: Search with threshold=0.8 (strict)
+Results: 1 entries found (filtered by score >= 0.8)
+  ...
+
+TEST SUMMARY
+Default threshold (from settings): 0.5
+Results without filter: 4
+Results with threshold=0.5: 3
+Results with threshold=0.8: 1
+
+[PASS] Test PASSED: Threshold filtering works as expected!
+       (More strict thresholds return fewer or equal results)
+```
+
+**What it validates**:
+- ✅ Score threshold is read from configuration
+- ✅ Default threshold is applied to searches
+- ✅ Per-search threshold overrides work
+- ✅ Higher thresholds return fewer or equal results
+- ✅ Filtering is working server-side in Qdrant
+
+**Prerequisites**:
+- `.env` file with `QDRANT_SCORE_THRESHOLD` configured
+- Qdrant server running with test data
+- Valid embedding provider configured
+- Collection exists (script creates test data if needed)
+
+---
+
+#### `kill_port_8765.bat`
+**Purpose**: Kill any process using port 8765 (default MCP server port).
+
+**Location**: `tests/kill_port_8765.bat`
+
+**Usage**:
+```bash
+tests\kill_port_8765.bat
+```
+
+**What it does**:
+1. Checks for processes listening on port 8765
+2. Identifies the PID using the port
+3. Forcefully terminates the process
+4. Verifies port is now free
+
+**When to use**:
+- Server didn't shut down cleanly
+- Port conflict when starting server
+- Before running integration tests
+- During development when restarting frequently
+
+**Output**:
+```
+========================================
+Killing Process on Port 8765
+========================================
+
+Checking for processes using port 8765...
+Found process(es) using port 8765:
+  TCP    0.0.0.0:8765    LISTENING    12345
+
+Attempting to kill...
+Killing PID: 12345
+SUCCESS: Port 8765 is now free!
+```
+
+**Note**: Windows-only script. Linux/Mac users can use:
+```bash
+lsof -ti:8765 | xargs kill -9
+```
+
+---
+
+## Root Directory Scripts
+
+These operational scripts remain in the root directory for easy access during development and deployment.
+
+### Server Operation Scripts
+
+#### `run_http_server.py`
+**Purpose**: Main server runner with HTTP/SSE transport.
+
+**Location**: Root directory
+
+**Usage**:
+```bash
+uv run python run_http_server.py
+```
+
+**What it does**:
+- Loads configuration from `.env` file
+- Starts MCP server with SSE (Server-Sent Events) transport
+- Runs on configured port (default: 8765)
+- Provides endpoint at `http://localhost:8765/sse` for Cursor integration
+
+**When to use**:
+- Primary method for running the server
+- Production deployment
+- Integration with Cursor IDE
+- When stdio transport has issues (Windows compatibility)
+
+---
+
+#### `start_mcp_server.bat`
+**Purpose**: Windows batch script to start the server with automatic port cleanup.
+
+**Location**: Root directory
+
+**Usage**:
+```bash
+start_mcp_server.bat
+```
+
+**What it does**:
+1. Loads configuration from `.env` file
+2. Checks if port 8765 is in use
+3. Automatically kills any process using the port
+4. Starts `run_http_server.py`
+5. Provides user-friendly console output
+
+**When to use**:
+- Quick server startup on Windows
+- Development workflow with frequent restarts
+- When you don't want to manually kill port processes
+- Preferred method for Windows users
+
+---
+
+#### `debug_server.bat`
+**Purpose**: Start server in debug mode with FastMCP inspector.
+
+**Location**: Root directory
+
+**Usage**:
+```bash
+debug_server.bat
+```
+
+**What it does**:
+1. Sets environment variables (can override `.env`)
+2. Enables FastMCP debug mode (`FASTMCP_DEBUG=true`)
+3. Sets log level to DEBUG
+4. Opens FastMCP Inspector in browser
+5. Allows interactive testing of tools
+
+**When to use**:
+- Debugging tool implementations
+- Testing tool parameters interactively
+- Inspecting request/response payloads
+- Development of new features
+- Troubleshooting configuration issues
+
+**Environment variables** (set in the script):
+```batch
+QDRANT_URL=http://localhost:6333
+COLLECTION_NAME=your-collection-name
+EMBEDDING_PROVIDER=openai_compatible
+FASTMCP_DEBUG=true
+FASTMCP_LOG_LEVEL=DEBUG
+```
+
+**Note**: Update the API key placeholder in the script or use `.env` file instead.
+
+---
+
+### Security and Maintenance Scripts
+
+#### `check_security.ps1` / `check_security.bat`
+**Purpose**: Pre-commit security checks to prevent leaking secrets.
+
+**Location**: Root directory
+
+**Usage**:
+```bash
+# PowerShell version
+.\check_security.ps1
+
+# Batch version
+check_security.bat
+```
+
+**What it checks**:
+1. **Hardcoded API keys**: Searches for `api_key="actual-value"` patterns
+2. **OpenAI key patterns**: Finds `sk-` patterns (excludes placeholders)
+3. **.env in .gitignore**: Verifies `.env` file is ignored
+4. **.env staged for commit**: Prevents committing `.env` file
+5. **Absolute paths** (PowerShell only): Finds hardcoded absolute paths
+
+**When to use**:
+- Before committing changes
+- As a pre-commit git hook
+- Before pushing to repository
+- During code review
+- After editing configuration files
+
+**Output** (when issues found):
+```
+Security Check - Scanning for Hardcoded Secrets
+
+[1/5] Checking for hardcoded API keys in scripts...
+  ❌ FOUND: Potential hardcoded API keys:
+     debug_server.bat:15:set OPENAI_API_KEY=sk-abc123...
+
+[2/5] Checking for OpenAI key patterns...
+  ✅ No OpenAI key patterns found
+
+❌ SECURITY ISSUES FOUND!
+Please fix the issues above before committing.
+```
+
+**Exit codes**:
+- `0`: All checks passed, safe to commit
+- `1`: Security issues found, do not commit
+
+**Setting up as git hook**:
+```bash
+# Create pre-commit hook
+echo ".\check_security.ps1" > .git/hooks/pre-commit
+# or for batch
+echo "call check_security.bat" > .git/hooks/pre-commit
+```
 
 ---
 

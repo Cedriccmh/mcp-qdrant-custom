@@ -20,7 +20,8 @@ def create_embedding_provider(settings: EmbeddingProviderSettings) -> EmbeddingP
             model_name=settings.model_name,
             api_key=settings.openai_api_key,
             base_url=settings.openai_base_url or "https://api.openai.com/v1",
-            vector_size=settings.openai_vector_size or 1536
+            vector_size=settings.openai_vector_size or 1536,
+            timeout=settings.openai_timeout
         )
     else:
         raise ValueError(f"Unsupported embedding provider: {settings.provider_type}")

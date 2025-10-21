@@ -54,7 +54,7 @@ rd /s /q I:\qdrant_data
 mkdir I:\qdrant_data
 
 # Start fresh container
-docker run -d --name qdrant-mcp -p 6333:6333 -v I:/qdrant_data:/qdrant/storage qdrant/qdrant
+docker run -d --name qdrant-mcp -p 6333:6333 -v ./qdrant_data:/qdrant/storage qdrant/qdrant
 
 # Verify it's running
 docker ps
@@ -102,12 +102,12 @@ The Qdrant container crashed because:
    Filesystem check failed for storage path ./storage
    Unrecognized filesystem - cannot guarantee data safety
    ```
-   - The I:/qdrant_data drive uses a filesystem Qdrant didn't recognize
+   - The data drive uses a filesystem Qdrant didn't recognize
    - This is usually safe but Qdrant warned about it
 
 2. **Loading Collection**:
    ```
-   Loading collection: ws-0266893cb2c84870
+   Loading collection: your-collection-name
    ```
    - Qdrant tried to load an existing collection
 
@@ -365,8 +365,8 @@ docker start qdrant-mcp
 # Create config.yaml
 # Mount it to container
 docker run -d --name qdrant-mcp -p 6333:6333 `
-  -v I:/qdrant_data:/qdrant/storage `
-  -v I:/qdrant_config.yaml:/qdrant/config/production.yaml `
+  -v ./qdrant_data:/qdrant/storage `
+  -v ./qdrant_config.yaml:/qdrant/config/production.yaml `
   qdrant/qdrant
 ```
 
@@ -374,7 +374,7 @@ docker run -d --name qdrant-mcp -p 6333:6333 `
 ```powershell
 docker run -d --name qdrant-mcp -p 6333:6333 `
   --memory=2g `
-  -v I:/qdrant_data:/qdrant/storage `
+  -v ./qdrant_data:/qdrant/storage `
   qdrant/qdrant
 ```
 

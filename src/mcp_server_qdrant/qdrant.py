@@ -43,6 +43,7 @@ class QdrantConnector:
         embedding_provider: EmbeddingProvider,
         qdrant_local_path: str | None = None,
         field_indexes: dict[str, models.PayloadSchemaType] | None = None,
+        score_threshold: float | None = None,
     ):
         self._qdrant_url = qdrant_url.rstrip("/") if qdrant_url else None
         self._qdrant_api_key = qdrant_api_key
@@ -52,6 +53,7 @@ class QdrantConnector:
             location=qdrant_url, api_key=qdrant_api_key, path=qdrant_local_path
         )
         self._field_indexes = field_indexes
+        self._score_threshold = score_threshold
         self._collection_vector_config_cache: dict[str, Any] = {}
 
     async def get_collection_names(self) -> list[str]:
@@ -136,6 +138,7 @@ class QdrantConnector:
         collection_name: str | None = None,
         limit: int = 10,
         query_filter: models.Filter | None = None,
+        score_threshold: float | None = None,
     ) -> list[Entry]:
         """
         Find points in the Qdrant collection. If there are no entries found, an empty list is returned.
@@ -144,6 +147,8 @@ class QdrantConnector:
                                 the default collection is used.
         :param limit: The maximum number of entries to return.
         :param query_filter: The filter to apply to the query, if any.
+        :param score_threshold: Minimum similarity score threshold. If not provided, uses the connector's
+                                default threshold (if set). Results with scores below this threshold are filtered out.
 
         :return: A list of entries found.
         """
@@ -158,6 +163,9 @@ class QdrantConnector:
 
         query_vector = await self._embedding_provider.embed_query(query)
         
+        # Use provided score_threshold or fall back to connector's default
+        effective_threshold = score_threshold if score_threshold is not None else self._score_threshold
+        
         # Determine if we need to specify a vector name
         uses_unnamed = await self._uses_unnamed_vectors(collection_name)
         
@@ -169,6 +177,7 @@ class QdrantConnector:
                 query=query_vector,
                 limit=limit,
                 query_filter=query_filter,
+                score_threshold=effective_threshold,
             )
         else:
             # For named vectors, specify which vector to use
@@ -179,6 +188,7 @@ class QdrantConnector:
                 using=vector_name,
                 limit=limit,
                 query_filter=query_filter,
+                score_threshold=effective_threshold,
             )
 
         # Parse results - handle both MCP format and other formats
