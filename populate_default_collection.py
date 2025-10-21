@@ -49,7 +49,26 @@ async def main():
     # Store test data
     print("\n2. Storing test data...")
     test_data = [
-
+        {
+            "content": "Python is a high-level programming language known for its simplicity and readability.",
+            "metadata": {"category": "programming", "language": "Python"}
+        },
+        {
+            "content": "JavaScript is the language of the web, enabling interactive websites and web applications.",
+            "metadata": {"category": "programming", "language": "JavaScript"}
+        },
+        {
+            "content": "Machine learning is a subset of artificial intelligence focused on learning from data.",
+            "metadata": {"category": "AI", "topic": "machine learning"}
+        },
+        {
+            "content": "Qdrant is a vector database designed for similarity search and AI applications.",
+            "metadata": {"category": "database", "type": "vector"}
+        },
+        {
+            "content": "The MCP protocol enables seamless integration between AI assistants and external tools.",
+            "metadata": {"category": "protocol", "type": "MCP"}
+        }
     ]
     
     for i, data in enumerate(test_data, 1):
