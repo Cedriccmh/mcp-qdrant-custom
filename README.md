@@ -192,8 +192,79 @@ QDRANT_SCORE_THRESHOLD=0.7  # 严格：高相关度 | Strict: high relevance
 
 ### Claude Desktop / Cursor / Windsurf
 
-**在 Cursor/Windsurf 中添加 MCP 服务器** | *Add MCP Server in Cursor/Windsurf:*
+有两种配置方式 | *Two configuration methods:*
 
+#### 方式 1：STDIO 模式（推荐）| Method 1: STDIO Mode (Recommended)
+
+**优点** | *Advantages:*
+- ✅ 无需预先启动服务器 | No need to start server manually
+- ✅ 客户端自动管理服务器生命周期 | Client manages server lifecycle automatically
+- ✅ 配置简单 | Simple configuration
+
+**配置文件位置** | *Configuration file location:*
+- **Cursor/Windsurf**: `%USERPROFILE%\.cursor\mcp.json` (Windows) 或 `~/.cursor/mcp.json` (macOS/Linux)
+- **Claude Desktop**: `%APPDATA%\Claude\claude_desktop_config.json` (Windows) 或 `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+
+**配置示例** | *Configuration example:*
+
+📖 **详细的 STDIO 配置教程**：[`docs/STDIO_CONFIGURATION_CN.md`](docs/STDIO_CONFIGURATION_CN.md)
+
+查看配置示例 | *See configuration examples:*
+- Windows Cursor: [`cursor_mcp_config_example_windows.json`](cursor_mcp_config_example_windows.json)
+- macOS/Linux Cursor: [`cursor_mcp_config_example.json`](cursor_mcp_config_example.json)
+- Claude Desktop: [`claude_desktop_config_example.json`](claude_desktop_config_example.json)
+
+**Windows Cursor 配置示例：**
+```json
+{
+  "mcpServers": {
+    "qdrant-custom": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "C:\\AgentProjects\\mcp-qdrant-custom",
+        "mcp-server-qdrant"
+      ],
+      "env": {
+        "QDRANT_URL": "http://localhost:6333",
+        "COLLECTION_NAME": "your-collection-name",
+        "EMBEDDING_PROVIDER": "openai_compatible",
+        "EMBEDDING_MODEL": "Qwen/Qwen3-Embedding-8B",
+        "OPENAI_API_KEY": "sk-your-api-key-here",
+        "OPENAI_BASE_URL": "https://api.siliconflow.cn/v1",
+        "OPENAI_VECTOR_SIZE": "4096"
+      }
+    }
+  }
+}
+```
+
+**⚠️ 重要提示** | *Important Notes:*
+- 将 `C:\\AgentProjects\\mcp-qdrant-custom` 替换为您的实际项目路径
+- 如果 `uv` 不在 PATH 中，使用完整路径，如 `C:/Users/YOUR_USERNAME/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe`
+- Replace `C:\\AgentProjects\\mcp-qdrant-custom` with your actual project path
+- If `uv` is not in PATH, use full path like `C:/Users/YOUR_USERNAME/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe`
+
+---
+
+#### 方式 2：HTTP/SSE 模式 | Method 2: HTTP/SSE Mode
+
+**适用场景** | *Use cases:*
+- 远程访问 | Remote access
+- 多客户端同时连接 | Multiple clients
+- 调试和监控 | Debugging and monitoring
+
+**步骤 1：启动服务器** | *Step 1: Start server*
+```bash
+# Windows
+start_mcp_server.bat
+
+# 或 Python 直接运行 | Or run with Python
+uv run python run_http_server.py
+```
+
+**步骤 2：在 Cursor/Windsurf 中添加服务器** | *Step 2: Add server in Cursor/Windsurf:*
 ```
 http://localhost:8765/sse
 ```
@@ -235,6 +306,7 @@ uv run python tests/test_fastembed_integration.py
 | 文档 | 说明 |
 |------|------|
 | [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | 完整配置指南 \| Complete configuration guide |
+| [`docs/STDIO_CONFIGURATION_CN.md`](docs/STDIO_CONFIGURATION_CN.md) | 🆕 STDIO 模式配置（中文）\| STDIO mode configuration (Chinese) |
 | [`docs/SCORE_THRESHOLD_FEATURE.md`](docs/SCORE_THRESHOLD_FEATURE.md) | 相似度阈值功能 \| Score threshold feature |
 | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | 常见问题排查 \| Common troubleshooting |
 | [`docs/DEBUGGING_GUIDE.md`](docs/DEBUGGING_GUIDE.md) | 深度调试指南 \| Deep debugging guide |

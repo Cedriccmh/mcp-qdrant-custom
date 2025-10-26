@@ -9,6 +9,7 @@ Welcome to the Qdrant MCP Server documentation. This folder contains comprehensi
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | [CONFIGURATION.md](CONFIGURATION.md) | Complete configuration guide (English) | All users |
+| [STDIO_CONFIGURATION_CN.md](STDIO_CONFIGURATION_CN.md) | 🆕 STDIO mode setup for custom projects | Chinese users |
 | [CONFIG.md](CONFIG.md) | Server configuration guide (Chinese) | Chinese users |
 | [QUICK_START_CN.md](QUICK_START_CN.md) | Chinese quick start guide | Chinese users |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions | All users |
@@ -53,6 +54,21 @@ Welcome to the Qdrant MCP Server documentation. This folder contains comprehensi
 - 常见配置示例
 
 **适用于**: 中文用户配置服务器
+
+---
+
+#### [STDIO_CONFIGURATION_CN.md](STDIO_CONFIGURATION_CN.md)
+**Purpose**: 🆕 STDIO 模式详细配置指南（中文）| STDIO mode configuration guide (Chinese).
+
+**内容**:
+- STDIO 模式原理和优势
+- 详细的配置步骤（Windows/macOS/Linux）
+- 环境变量完整说明
+- 常见问题和解决方案
+- STDIO vs HTTP/SSE 对比
+- 配置验证方法
+
+**适用于**: 需要在 Cursor/Claude Desktop 中使用本地自定义项目，且不想手动启动服务器的用户
 
 ---
 
@@ -150,6 +166,7 @@ Welcome to the Qdrant MCP Server documentation. This folder contains comprehensi
 |-------|----------|---------|
 | Environment Variables | [CONFIGURATION.md](CONFIGURATION.md) | Environment Variables Reference |
 | Quick Start | [CONFIGURATION.md](CONFIGURATION.md) | Quick Start |
+| **STDIO Mode Setup** | [STDIO_CONFIGURATION_CN.md](STDIO_CONFIGURATION_CN.md) | 🆕 All sections |
 | Embedding Providers | [CONFIGURATION.md](CONFIGURATION.md) | Embedding Provider Settings |
 | OpenAI-Compatible APIs | [CONFIGURATION.md](CONFIGURATION.md) | OpenAI Compatible Settings |
 | Collection Names | [CONFIGURATION.md](CONFIGURATION.md) | Collection Settings |

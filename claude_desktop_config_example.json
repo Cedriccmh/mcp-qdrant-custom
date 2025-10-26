@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "qdrant-custom": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/mcp-qdrant-custom",
+        "mcp-server-qdrant"
+      ],
+      "env": {
+        "QDRANT_URL": "http://localhost:6333",
+        "COLLECTION_NAME": "your-collection-name",
+        "EMBEDDING_PROVIDER": "openai_compatible",
+        "EMBEDDING_MODEL": "Qwen/Qwen3-Embedding-8B",
+        "OPENAI_API_KEY": "sk-your-api-key-here",
+        "OPENAI_BASE_URL": "https://api.siliconflow.cn/v1",
+        "OPENAI_VECTOR_SIZE": "4096"
+      }
+    }
+  }
+}
+
